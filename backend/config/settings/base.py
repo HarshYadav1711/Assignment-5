@@ -40,17 +40,41 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    # Security middleware (first - sets security headers)
     'django.middleware.security.SecurityMiddleware',
-    'corsheaders.middleware.CorsMiddleware',  # CORS middleware (early in chain)
+    
+    # CORS middleware (early - handles CORS headers)
+    'corsheaders.middleware.CorsMiddleware',
+    
+    # Request logging (early - logs all requests)
+    'middleware.request_logging.RequestLoggingMiddleware',
+    
+    # Session middleware (required for sessions)
     'django.contrib.sessions.middleware.SessionMiddleware',
+    
+    # Common middleware (URL rewriting, etc.)
     'django.middleware.common.CommonMiddleware',
+    
+    # CSRF protection
     'django.middleware.csrf.CsrfViewMiddleware',
+    
+    # Authentication middleware (sets request.user)
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    
+    # JWT validation (after auth - validates JWT tokens)
+    'middleware.jwt_auth.JWTAuthMiddleware',
+    
+    # Rate limiting (after auth - uses user/IP for limiting)
+    'middleware.rate_limiting.RateLimitingMiddleware',
+    
+    # Messages middleware (flash messages)
     'django.contrib.messages.middleware.MessageMiddleware',
+    
+    # Clickjacking protection
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    # Custom middleware placeholders
-    # 'middleware.jwt_auth.JWTAuthMiddleware',  # Uncomment when implemented
-    # 'middleware.request_logging.RequestLoggingMiddleware',  # Uncomment when implemented
+    
+    # Global exception handler (last - catches unhandled exceptions)
+    'middleware.exception_handler.GlobalExceptionHandlerMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -298,4 +322,18 @@ CHANNEL_LAYERS = {
 
 # ASGI Application
 ASGI_APPLICATION = 'config.asgi.application'
+
+# Rate Limiting Configuration
+# Controls request rate limiting per user/IP
+RATE_LIMIT_ENABLED = os.environ.get('RATE_LIMIT_ENABLED', 'True').lower() == 'true'
+RATE_LIMIT_DEFAULT = int(os.environ.get('RATE_LIMIT_DEFAULT', 100))  # requests per window
+RATE_LIMIT_WINDOW = int(os.environ.get('RATE_LIMIT_WINDOW', 60))  # seconds
+
+# Custom rate limits per endpoint (requests per window)
+# More restrictive limits for authentication endpoints
+RATE_LIMIT_PER_ENDPOINT = {
+    '/api/v1/auth/login/': 5,      # 5 login attempts per minute
+    '/api/v1/auth/register/': 3,  # 3 registrations per minute
+    '/api/v1/auth/refresh/': 10,   # 10 token refreshes per minute
+}
 
