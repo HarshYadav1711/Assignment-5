@@ -2,7 +2,7 @@
 Admin configuration for Chat models.
 """
 from django.contrib import admin
-from .models import ChatRoom, Message
+from .models import ChatRoom, ChatMessage
 
 
 @admin.register(ChatRoom)
@@ -12,8 +12,8 @@ class ChatRoomAdmin(admin.ModelAdmin):
     raw_id_fields = ('trip',)
 
 
-@admin.register(Message)
-class MessageAdmin(admin.ModelAdmin):
+@admin.register(ChatMessage)
+class ChatMessageAdmin(admin.ModelAdmin):
     list_display = ('sender', 'chat_room', 'content_preview', 'message_type', 'created_at')
     list_filter = ('message_type', 'is_edited', 'created_at')
     search_fields = ('content', 'sender__email')

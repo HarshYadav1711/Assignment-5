@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'corsheaders',  # For CORS handling in development
     'drf_spectacular',  # OpenAPI/Swagger documentation
+    'channels',  # WebSocket support
     
     # Local apps
     'users',
@@ -280,4 +281,21 @@ X_FRAME_OPTIONS = 'DENY'
 # File Upload Settings
 FILE_UPLOAD_MAX_MEMORY_SIZE = 2621440  # 2.5 MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = 2621440  # 2.5 MB
+
+# Django Channels Configuration
+# Channel layer for WebSocket communication
+# Uses Redis as the backing store for scalability
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [(os.environ.get('REDIS_HOST', '127.0.0.1'), int(os.environ.get('REDIS_PORT', 6379)))],
+            "capacity": 1500,  # Maximum number of messages to buffer per channel
+            "expiry": 10,  # Message expiry time in seconds
+        },
+    },
+}
+
+# ASGI Application
+ASGI_APPLICATION = 'config.asgi.application'
 

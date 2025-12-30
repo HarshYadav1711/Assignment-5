@@ -12,6 +12,10 @@ django-cors-headers==4.3.1
 # API Documentation
 drf-spectacular==0.26.5
 
+# WebSocket support (Django Channels)
+channels==4.0.0
+channels-redis==4.1.0
+
 # Environment variables
 python-dotenv==1.0.0
 

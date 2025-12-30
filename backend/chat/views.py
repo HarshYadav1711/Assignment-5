@@ -1,8 +1,8 @@
 """
 Views for Chat management.
 
-Note: Real-time messaging is handled via WebSocket consumers (to be implemented).
-These REST endpoints are for message history and fallback message creation.
+Real-time messaging is handled via WebSocket consumers.
+These REST endpoints are for message history and fallback message creation when WebSocket is unavailable.
 """
 from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
@@ -24,15 +24,15 @@ class ChatRoomViewSet(viewsets.ReadOnlyModelViewSet):
     
     def get_queryset(self):
         """Only show chat rooms for trips user is member of."""
-        from trips.models import TripMember
+        from trips.models import Collaborator
         user = self.request.user
-        user_trips = TripMember.objects.filter(user=user).values_list('trip_id', flat=True)
+        user_trips = Collaborator.objects.filter(user=user).values_list('trip_id', flat=True)
         return ChatRoom.objects.filter(trip_id__in=user_trips)
     
     def check_object_permissions(self, request, obj):
-        """Verify user is member of the trip."""
-        from trips.models import TripMember
-        if not TripMember.objects.filter(trip=obj.trip, user=request.user).exists():
+        """Verify user is collaborator of the trip."""
+        from trips.models import Collaborator
+        if not Collaborator.objects.filter(trip=obj.trip, user=request.user).exists():
             from rest_framework.exceptions import PermissionDenied
             raise PermissionDenied("You must be a member of this trip to access its chat room.")
         super().check_object_permissions(request, obj)
@@ -52,7 +52,7 @@ class MessageViewSet(viewsets.ModelViewSet):
     
     Used for message history and fallback message creation (if WebSocket fails).
     """
-    queryset = Message.objects.all()
+    queryset = ChatMessage.objects.all()
     permission_classes = [permissions.IsAuthenticated]
     
     def get_serializer_class(self):

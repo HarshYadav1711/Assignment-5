@@ -2,17 +2,17 @@
 Serializers for Chat models.
 """
 from rest_framework import serializers
-from .models import ChatRoom, Message
+from .models import ChatRoom, ChatMessage
 from users.serializers import UserSerializer
 
 
 class MessageSerializer(serializers.ModelSerializer):
-    """Serializer for Message model."""
+    """Serializer for ChatMessage model."""
     sender = UserSerializer(read_only=True)
     reply_to = serializers.SerializerMethodField()
     
     class Meta:
-        model = Message
+        model = ChatMessage
         fields = [
             'id', 'chat_room', 'sender', 'content', 'message_type',
             'reply_to', 'is_edited', 'created_at', 'updated_at'
@@ -49,7 +49,7 @@ class ChatRoomSerializer(serializers.ModelSerializer):
         """Return last message if exists."""
         last_msg = obj.messages.last()
         if last_msg:
-            return MessageSerializer(last_msg).data
+            return MessageSerializer(last_msg).data if last_msg else None
         return None
 
 
@@ -57,12 +57,12 @@ class MessageCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating a message."""
     
     class Meta:
-        model = Message
+        model = ChatMessage
         fields = ['chat_room', 'content', 'message_type', 'reply_to']
     
     def create(self, validated_data):
         """Create message with current user as sender."""
-        return Message.objects.create(
+        return ChatMessage.objects.create(
             sender=self.context['request'].user,
             **validated_data
         )
