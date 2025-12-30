@@ -22,18 +22,19 @@ class RegisterView(generics.CreateAPIView):
     """
     User registration endpoint.
     
-    Creates a new user account and returns JWT tokens.
+    Creates a new user account and returns JWT tokens for immediate authentication.
     """
     queryset = User.objects.all()
     permission_classes = [permissions.AllowAny]
     serializer_class = UserRegistrationSerializer
     
-    def create(self, request, *args, **kwargs):
+    def create(self, request, *args, **kwargs) -> Response:
+        """Create user account and return JWT tokens."""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         
-        # Generate JWT tokens
+        # Generate JWT tokens for immediate use
         refresh = RefreshToken.for_user(user)
         
         return Response({
@@ -61,32 +62,32 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
 @api_view(['GET', 'PUT'])
 @permission_classes([permissions.IsAuthenticated])
-def current_user(request):
+def current_user(request) -> Response:
     """
     Get or update current user profile.
     
-    GET: Returns current user data
-    PUT: Updates user profile
+    GET: Returns current authenticated user data
+    PUT: Updates user profile (creates profile if doesn't exist)
     """
     if request.method == 'GET':
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
     
     elif request.method == 'PUT':
-        # Update profile if exists, create if not
-        profile, created = Profile.objects.get_or_create(user=request.user)
+        # Ensure profile exists (create if needed)
+        profile, _ = Profile.objects.get_or_create(user=request.user)
         serializer = ProfileUpdateSerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         
-        # Return updated user data
+        # Return updated user with profile data
         user_serializer = UserSerializer(request.user)
         return Response(user_serializer.data)
 
 
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
-def logout(request):
+def logout(request) -> Response:
     """
     Logout endpoint.
     
@@ -99,6 +100,7 @@ def logout(request):
             token = RefreshToken(refresh_token)
             token.blacklist()
         return Response({'detail': 'Successfully logged out.'}, status=status.HTTP_200_OK)
-    except Exception as e:
+    except Exception:
+        # Don't expose error details for security
         return Response({'detail': 'Invalid token.'}, status=status.HTTP_400_BAD_REQUEST)
 
