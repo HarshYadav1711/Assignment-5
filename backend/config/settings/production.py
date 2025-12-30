@@ -28,8 +28,39 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = False  # Never allow all in production
 
 # Database: Must use PostgreSQL in production
-# Connection pooling recommended for production
-DATABASES['default']['CONN_MAX_AGE'] = 600  # Persistent connections
+# Use DATABASE_URL if provided, otherwise use individual variables
+if 'DATABASE_URL' in os.environ:
+    try:
+        import dj_database_url
+        DATABASES['default'] = dj_database_url.config(
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    except ImportError:
+        # Fallback to manual parsing if dj-database-url not installed
+        import urllib.parse
+        db_url = urllib.parse.urlparse(os.environ['DATABASE_URL'])
+        DATABASES['default'].update({
+            'NAME': db_url.path[1:],  # Remove leading '/'
+            'USER': db_url.username,
+            'PASSWORD': db_url.password,
+            'HOST': db_url.hostname,
+            'PORT': db_url.port or '5432',
+            'CONN_MAX_AGE': 600,
+        })
+else:
+    # Individual database variables
+    DATABASES['default'].update({
+        'NAME': os.environ.get('DB_NAME', ''),
+        'USER': os.environ.get('DB_USER', ''),
+        'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+        'HOST': os.environ.get('DB_HOST', ''),
+        'PORT': os.environ.get('DB_PORT', '5432'),
+        'OPTIONS': {
+            'sslmode': os.environ.get('DB_SSLMODE', 'require'),
+        },
+        'CONN_MAX_AGE': 600,  # Persistent connections (10 minutes)
+    })
 
 # Static files: Use WhiteNoise or CDN in production
 # STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'

@@ -46,10 +46,12 @@ USER appuser
 # Expose port
 EXPOSE 8000
 
-# Health check
+# Health check (using urllib instead of requests to avoid extra dependency)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:8000/health/')" || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/')" || exit 1
 
 # Run application
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "4"]
+# Use environment variable for workers, default to 4
+# Formula: (2 × CPU cores) + 1
+CMD ["sh", "-c", "gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers ${GUNICORN_WORKERS:-4} --timeout 30 --keep-alive 2 --access-logfile - --error-logfile -"]
 

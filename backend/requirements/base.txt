@@ -21,4 +21,5 @@ python-dotenv==1.0.0
 
 # Utilities
 pytz==2023.3
+dj-database-url==2.1.0  # For DATABASE_URL parsing
 
