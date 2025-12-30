@@ -1,0 +1,2 @@
+# Trips app - Trip management
+
