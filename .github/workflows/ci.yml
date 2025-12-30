@@ -1,0 +1,19 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  backend:
+    name: Backend CI
+    uses: ./.github/workflows/backend-ci.yml
+    secrets: inherit
+
+  frontend:
+    name: Frontend CI
+    uses: ./.github/workflows/frontend-ci.yml
+    secrets: inherit
+
