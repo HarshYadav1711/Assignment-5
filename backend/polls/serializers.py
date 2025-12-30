@@ -2,7 +2,7 @@
 Serializers for Poll models.
 """
 from rest_framework import serializers
-from .models import Poll, PollOption, PollVote
+from .models import Poll, PollOption, Vote
 from users.serializers import UserSerializer
 
 
@@ -20,14 +20,14 @@ class PollOptionSerializer(serializers.ModelSerializer):
         """Check if current user voted for this option."""
         request = self.context.get('request')
         if request and request.user.is_authenticated:
-            return PollVote.objects.filter(option=obj, user=request.user).exists()
+            return Vote.objects.filter(option=obj, user=request.user).exists()
         return False
 
 
 class PollSerializer(serializers.ModelSerializer):
     """Serializer for Poll model."""
     created_by = UserSerializer(read_only=True)
-    options = PollOptionSerializer(many=True, read_only=True)
+    options = PollOptionSerializer(many=True, read_only=True, context={'request': None})
     total_votes = serializers.SerializerMethodField()
     user_has_voted = serializers.SerializerMethodField()
     
@@ -40,15 +40,22 @@ class PollSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id', 'created_by', 'created_at', 'updated_at']
     
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Pass request context to nested serializers
+        request = self.context.get('request')
+        if request:
+            self.fields['options'].context['request'] = request
+    
     def get_total_votes(self, obj):
         """Return total number of votes across all options."""
-        return PollVote.objects.filter(poll=obj).count()
+        return Vote.objects.filter(poll=obj).count()
     
     def get_user_has_voted(self, obj):
         """Check if current user has voted."""
         request = self.context.get('request')
         if request and request.user.is_authenticated:
-            return PollVote.objects.filter(poll=obj, user=request.user).exists()
+            return Vote.objects.filter(poll=obj, user=request.user).exists()
         return False
 
 
@@ -57,12 +64,30 @@ class PollCreateSerializer(serializers.ModelSerializer):
     options = serializers.ListField(
         child=serializers.CharField(max_length=200),
         write_only=True,
-        min_length=2
+        min_length=2,
+        help_text="List of poll option texts (minimum 2 options required)"
     )
     
     class Meta:
         model = Poll
         fields = ['trip', 'question', 'description', 'is_active', 'closes_at', 'options']
+    
+    def validate_options(self, value):
+        """Validate that options are unique."""
+        if len(value) != len(set(value)):
+            raise serializers.ValidationError('Poll options must be unique.')
+        return value
+    
+    def validate(self, attrs):
+        """Validate poll data."""
+        closes_at = attrs.get('closes_at')
+        if closes_at:
+            from django.utils import timezone
+            if closes_at < timezone.now():
+                raise serializers.ValidationError({
+                    'closes_at': 'Close date cannot be in the past.'
+                })
+        return attrs
     
     def create(self, validated_data):
         """Create poll and options."""
@@ -82,18 +107,49 @@ class PollCreateSerializer(serializers.ModelSerializer):
         return poll
 
 
-class PollVoteSerializer(serializers.ModelSerializer):
-    """Serializer for PollVote model."""
+class VoteSerializer(serializers.ModelSerializer):
+    """Serializer for Vote model."""
     
     class Meta:
-        model = PollVote
+        model = Vote
         fields = ['id', 'poll', 'option', 'created_at']
         read_only_fields = ['id', 'created_at']
     
+    def validate(self, attrs):
+        """Validate vote data."""
+        poll = attrs.get('poll')
+        option = attrs.get('option')
+        
+        # Ensure option belongs to poll
+        if option.poll != poll:
+            raise serializers.ValidationError({
+                'option': 'Option must belong to the specified poll.'
+            })
+        
+        # Ensure poll is active
+        if not poll.is_active:
+            raise serializers.ValidationError({
+                'poll': 'Cannot vote on an inactive poll.'
+            })
+        
+        # Check if poll has closed
+        if poll.closes_at:
+            from django.utils import timezone
+            if poll.closes_at < timezone.now():
+                raise serializers.ValidationError({
+                    'poll': 'This poll has closed.'
+                })
+        
+        return attrs
+    
     def create(self, validated_data):
         """Create vote."""
-        return PollVote.objects.create(
+        return Vote.objects.create(
             user=self.context['request'].user,
             **validated_data
         )
 
+
+class VoteRequestSerializer(serializers.Serializer):
+    """Serializer for vote request (option_id only)."""
+    option_id = serializers.UUIDField(required=True, help_text="UUID of the poll option to vote for")

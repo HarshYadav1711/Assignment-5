@@ -2,29 +2,31 @@
 Custom permissions for Trip operations.
 """
 from rest_framework import permissions
-from .models import TripMember
+from .models import Collaborator
 
 
 class IsTripMember(permissions.BasePermission):
-    """Permission to check if user is a member of the trip."""
+    """Permission to check if user is a collaborator of the trip."""
     
     def has_object_permission(self, request, view, obj):
-        return TripMember.objects.filter(trip=obj, user=request.user).exists()
+        return Collaborator.objects.filter(trip=obj, user=request.user).exists()
 
 
 class IsTripOwnerOrEditor(permissions.BasePermission):
     """Permission to check if user is owner or editor of the trip."""
     
     def has_object_permission(self, request, view, obj):
-        membership = TripMember.objects.filter(trip=obj, user=request.user).first()
-        if not membership:
+        collaboration = Collaborator.objects.filter(trip=obj, user=request.user).first()
+        if not collaboration:
             return False
-        return membership.role in ['owner', 'editor']
+        return collaboration.role in ['owner', 'editor']
 
 
 class IsTripOwner(permissions.BasePermission):
     """Permission to check if user is owner of the trip."""
     
     def has_object_permission(self, request, view, obj):
-        return obj.creator == request.user
-
+        collaboration = Collaborator.objects.filter(trip=obj, user=request.user).first()
+        if not collaboration:
+            return False
+        return collaboration.role == 'owner'

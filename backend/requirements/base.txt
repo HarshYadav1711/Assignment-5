@@ -9,6 +9,9 @@ psycopg2-binary==2.9.9
 # CORS handling
 django-cors-headers==4.3.1
 
+# API Documentation
+drf-spectacular==0.26.5
+
 # Environment variables
 python-dotenv==1.0.0
 
