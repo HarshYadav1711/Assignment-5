@@ -37,33 +37,73 @@ Planning a trip with friends? This app makes it easy. Create trips, invite colla
 
 ## Quick Start
 
-### Backend Setup
+### Option 1: Docker (Easiest - Recommended)
+
+**Backend with Docker Compose:**
+
+```bash
+# Navigate to docker directory
+cd backend/docker
+
+# Start all services (PostgreSQL, Redis, Django)
+docker-compose up --build
+
+# In another terminal, run migrations
+docker-compose exec web python manage.py migrate
+
+# Create admin user
+docker-compose exec web python manage.py createsuperuser
+```
+
+**Access:**
+- API: http://localhost:8000
+- Admin: http://localhost:8000/admin
+- API Docs: http://localhost:8000/api/docs
+
+### Option 2: Local Development
+
+**Backend:**
 
 ```bash
 cd backend
 
-# Create virtual environment
+# 1. Create virtual environment
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 
-# Install dependencies
+# 2. Install dependencies
 pip install -r requirements/development.txt
 
-# Set up environment variables
-cp .env.example .env
-# Edit .env with your settings
+# 3. Set up PostgreSQL database
+createdb trip_planner
+# Or: psql -U postgres -c "CREATE DATABASE trip_planner;"
 
-# Run migrations
+# 4. Create .env file (copy from .env.example if exists, or create manually)
+# Add these variables:
+# DJANGO_SECRET_KEY=your-secret-key
+# DB_NAME=trip_planner
+# DB_USER=postgres
+# DB_PASSWORD=your-password
+# DB_HOST=localhost
+# DB_PORT=5432
+# DJANGO_SETTINGS_MODULE=config.settings.development
+
+# 5. Run migrations
 python manage.py migrate
 
-# Create superuser
+# 6. Create superuser
 python manage.py createsuperuser
 
-# Start server
+# 7. Start Redis (for WebSocket support)
+# macOS: brew services start redis
+# Linux: sudo systemctl start redis
+# Or use Docker: docker run -d -p 6379:6379 redis:7-alpine
+
+# 8. Start server
 python manage.py runserver
 ```
 
-### Frontend Setup
+**Frontend:**
 
 ```bash
 cd frontend
@@ -71,16 +111,15 @@ cd frontend
 # Install dependencies
 flutter pub get
 
+# Configure API endpoint in core/config/api_config.dart
+# Set baseUrl to: http://localhost:8000
+# For Android emulator: http://10.0.2.2:8000
+
 # Run app
 flutter run
 ```
 
-### Docker Setup
-
-```bash
-cd backend/docker
-docker-compose up --build
-```
+**For detailed setup instructions, see [QUICK_START.md](./QUICK_START.md)**
 
 ## Project Structure
 
@@ -145,6 +184,7 @@ See [API Documentation](./backend/API_DOCUMENTATION.md) for complete reference.
 
 ## Documentation
 
+- **[Quick Start Guide](./QUICK_START.md)** - Get running in minutes ⚡
 - **[Architecture](./ARCHITECTURE.md)** - Complete system design
 - **[API Docs](./backend/API_DOCUMENTATION.md)** - Endpoint reference
 - **[Deployment Guide](./backend/DEPLOYMENT_CHECKLIST.md)** - Cloud deployment
