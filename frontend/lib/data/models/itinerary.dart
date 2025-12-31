@@ -1,3 +1,5 @@
+import '../../../core/utils/extensions.dart';
+
 /// Itinerary model
 class ItineraryModel {
   final String id;

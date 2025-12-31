@@ -8,6 +8,7 @@ import '../../../auth/bloc/auth_event.dart';
 import '../../../../data/models/trip.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../core/utils/extensions.dart';
+import '../widgets/create_trip_dialog.dart';
 
 class TripsPage extends StatefulWidget {
   const TripsPage({super.key});
@@ -220,11 +221,9 @@ class _TripsPageState extends State<TripsPage> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          // Create trip dialog (to be implemented)
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Create trip feature coming soon'),
-            ),
+          showDialog(
+            context: context,
+            builder: (context) => const CreateTripDialog(),
           );
         },
         icon: const Icon(Icons.add),

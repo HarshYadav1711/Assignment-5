@@ -25,24 +25,74 @@ class TripModel {
   });
 
   factory TripModel.fromJson(Map<String, dynamic> json) {
-    return TripModel(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      description: json['description'] as String?,
-      creatorId: json['creator'] is String
-          ? json['creator'] as String
-          : (json['creator'] as Map)['id'] as String,
-      startDate: json['start_date'] != null
-          ? DateTime.parse(json['start_date'] as String)
-          : null,
-      endDate: json['end_date'] != null
-          ? DateTime.parse(json['end_date'] as String)
-          : null,
-      status: json['status'] as String? ?? 'draft',
-      visibility: json['visibility'] as String? ?? 'private',
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
-    );
+    try {
+      // Handle creator field - can be String ID or nested object
+      String creatorId;
+      final creator = json['creator'];
+      if (creator == null) {
+        throw FormatException('Creator field is required but was null. JSON keys: ${json.keys.join(", ")}');
+      } else if (creator is String) {
+        creatorId = creator;
+      } else if (creator is Map) {
+        final creatorMap = creator as Map<String, dynamic>;
+        final creatorIdValue = creatorMap['id'] as String?;
+        if (creatorIdValue == null) {
+          throw FormatException('Creator object missing id field. Creator data: $creatorMap');
+        }
+        creatorId = creatorIdValue;
+      } else {
+        throw FormatException('Unexpected creator field type: ${creator.runtimeType}. Value: $creator');
+      }
+
+      // Handle required fields
+      final id = json['id']?.toString();
+      if (id == null || id.isEmpty) {
+        throw FormatException('Trip id is required. JSON keys: ${json.keys.join(", ")}');
+      }
+
+      final title = json['title']?.toString();
+      if (title == null || title.isEmpty) {
+        throw FormatException('Trip title is required. JSON keys: ${json.keys.join(", ")}');
+      }
+
+      // Handle description - can be null or empty string
+      final description = json['description'];
+      final descriptionStr = (description == null || description == '')
+          ? null
+          : description.toString();
+
+      // Handle dates - parse safely
+      DateTime? parseDate(dynamic dateValue) {
+        if (dateValue == null || dateValue == '') return null;
+        try {
+          return DateTime.parse(dateValue.toString());
+        } catch (e) {
+          return null;
+        }
+      }
+
+      // Handle status and visibility with defaults
+      final status = json['status']?.toString();
+      final visibility = json['visibility']?.toString();
+
+      return TripModel(
+        id: id,
+        title: title,
+        description: descriptionStr,
+        creatorId: creatorId,
+        startDate: parseDate(json['start_date']),
+        endDate: parseDate(json['end_date']),
+        status: (status != null && status.isNotEmpty) ? status : 'draft',
+        visibility: (visibility != null && visibility.isNotEmpty) ? visibility : 'private',
+        createdAt: parseDate(json['created_at']) ?? DateTime.now(),
+        updatedAt: parseDate(json['updated_at']) ?? DateTime.now(),
+      );
+    } catch (e) {
+      if (e is FormatException) {
+        rethrow;
+      }
+      throw FormatException('Error parsing TripModel: ${e.toString()}. JSON: $json');
+    }
   }
 
   Map<String, dynamic> toJson() {

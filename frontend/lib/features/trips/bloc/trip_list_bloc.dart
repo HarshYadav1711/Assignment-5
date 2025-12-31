@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../data/repositories/trip_repository.dart';
 import '../../../data/models/trip.dart';
+import '../../../core/network/network_exception.dart';
 import 'trip_list_event.dart';
 import 'trip_list_state.dart';
 
@@ -24,7 +25,10 @@ class TripListBloc extends Bloc<TripListEvent, TripListState> {
       final trips = await _repository.getTrips(forceRefresh: event.forceRefresh);
       emit(TripListLoaded(trips));
     } catch (e) {
-      emit(TripListError(e.toString()));
+      final message = e is NetworkException 
+          ? e.message 
+          : e.toString().replaceAll('NetworkException: ', '');
+      emit(TripListError(message));
     }
   }
 
@@ -42,11 +46,14 @@ class TripListBloc extends Bloc<TripListEvent, TripListState> {
       final trips = await _repository.getTrips(forceRefresh: true);
       emit(TripListLoaded(trips));
     } catch (e) {
+      final message = e is NetworkException 
+          ? e.message 
+          : e.toString().replaceAll('NetworkException: ', '');
       // On error, keep showing current data
       if (state is TripListLoaded) {
-        emit(TripListError('Failed to refresh: ${e.toString()}'));
+        emit(TripListError('Failed to refresh: $message'));
       } else {
-        emit(TripListError(e.toString()));
+        emit(TripListError(message));
       }
     }
   }
@@ -55,21 +62,22 @@ class TripListBloc extends Bloc<TripListEvent, TripListState> {
     CreateTripEvent event,
     Emitter<TripListState> emit,
   ) async {
-    // Optimistic update
-    if (state is TripListLoaded) {
-      // We'll add the trip after creation
-    }
-
+    // Show loading state if we have trips, otherwise keep current state
+    final currentTrips = state is TripListLoaded ? (state as TripListLoaded).trips : <TripModel>[];
+    
     try {
       final newTrip = await _repository.createTrip(event.tripData);
-      if (state is TripListLoaded) {
-        final currentTrips = (state as TripListLoaded).trips;
-        emit(TripListLoaded([newTrip, ...currentTrips]));
-      } else {
-        add(LoadTripListEvent());
-      }
+      // Success - add new trip to the list
+      emit(TripListLoaded([newTrip, ...currentTrips]));
     } catch (e) {
-      emit(TripListError('Failed to create trip: ${e.toString()}'));
+      final message = e is NetworkException 
+          ? e.message 
+          : e.toString().replaceAll('NetworkException: ', '');
+      emit(TripListError('Failed to create trip: $message'));
+      // Restore previous state on error
+      if (currentTrips.isNotEmpty) {
+        emit(TripListLoaded(currentTrips));
+      }
     }
   }
 

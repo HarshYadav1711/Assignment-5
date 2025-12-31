@@ -1,3 +1,5 @@
+import 'extensions.dart';
+
 /// Input validators
 class Validators {
   static String? email(String? value) {

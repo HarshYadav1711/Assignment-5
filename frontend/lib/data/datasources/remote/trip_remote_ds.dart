@@ -24,7 +24,21 @@ class TripRemoteDataSource {
           .map((json) => TripModel.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
-      throw NetworkException('Failed to load trips: ${e.toString()}');
+      if (e is NetworkException) {
+        rethrow;
+      }
+      // Extract the actual error message
+      String errorMessage = 'Failed to load trips';
+      if (e.toString().contains('ConnectionException') || 
+          e.toString().contains('No internet') ||
+          e.toString().contains('Connection timeout')) {
+        errorMessage = 'Unable to connect to server. Please check if the backend is running.';
+      } else if (e.toString().contains('401') || e.toString().contains('Unauthorized')) {
+        errorMessage = 'Authentication required. Please log in again.';
+      } else {
+        errorMessage = 'Failed to load trips: ${e.toString().replaceAll('NetworkException: ', '')}';
+      }
+      throw NetworkException(errorMessage);
     }
   }
 
@@ -42,8 +56,20 @@ class TripRemoteDataSource {
   Future<TripModel> createTrip(Map<String, dynamic> data) async {
     try {
       final response = await _apiClient.post('/trips/', data: data);
-      return TripModel.fromJson(response.data as Map<String, dynamic>);
+      final responseData = response.data;
+      if (responseData is! Map<String, dynamic>) {
+        throw NetworkException('Invalid response format from server');
+      }
+      try {
+        return TripModel.fromJson(responseData);
+      } catch (e) {
+        // Log the actual response for debugging
+        throw NetworkException('Failed to parse trip response: ${e.toString()}. Response: ${responseData.toString()}');
+      }
     } catch (e) {
+      if (e is NetworkException) {
+        rethrow;
+      }
       throw NetworkException('Failed to create trip: ${e.toString()}');
     }
   }

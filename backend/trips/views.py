@@ -72,6 +72,21 @@ class TripViewSet(viewsets.ModelViewSet):
         context['request'] = self.request
         return context
     
+    def create(self, request, *args, **kwargs):
+        """Create trip and return full trip data."""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        trip = serializer.save()
+        
+        # Return full trip data using TripSerializer
+        response_serializer = TripSerializer(trip, context=self.get_serializer_context())
+        headers = self.get_success_headers(response_serializer.data)
+        return Response(
+            response_serializer.data,
+            status=status.HTTP_201_CREATED,
+            headers=headers
+        )
+    
     @action(detail=True, methods=['get'], url_path='collaborators')
     def collaborators(self, request, pk=None):
         """

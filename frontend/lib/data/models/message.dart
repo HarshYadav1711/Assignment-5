@@ -1,3 +1,5 @@
+import 'user.dart';
+
 /// Chat message model
 class ChatMessageModel {
   final String id;
