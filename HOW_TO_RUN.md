@@ -11,10 +11,11 @@ cd backend/docker
 # 2. Start all services (PostgreSQL, Redis, Django)
 docker-compose up --build
 
-# 3. In a new terminal, run migrations
+# 3. In a NEW terminal window, navigate to the same directory and run migrations
+cd backend/docker
 docker-compose exec web python manage.py migrate
 
-# 4. Create admin user
+# 4. Create admin user (in the same terminal)
 docker-compose exec web python manage.py createsuperuser
 # Follow prompts to create admin account
 
@@ -22,6 +23,12 @@ docker-compose exec web python manage.py createsuperuser
 # API: http://localhost:8000
 # Admin: http://localhost:8000/admin
 # API Docs: http://localhost:8000/api/docs
+```
+
+**Important:** All `docker-compose` commands must be run from the `backend/docker` directory, or use the `-f` flag:
+```bash
+# From project root, specify the compose file:
+docker-compose -f backend/docker/docker-compose.yml exec web python manage.py migrate
 ```
 
 **That's it!** The backend is now running with:

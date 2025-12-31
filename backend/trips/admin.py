@@ -2,7 +2,7 @@
 Admin configuration for Trip models.
 """
 from django.contrib import admin
-from .models import Trip, TripMember
+from .models import Trip, Collaborator
 
 
 @admin.register(Trip)
@@ -13,8 +13,8 @@ class TripAdmin(admin.ModelAdmin):
     raw_id_fields = ('creator',)
 
 
-@admin.register(TripMember)
-class TripMemberAdmin(admin.ModelAdmin):
+@admin.register(Collaborator)
+class CollaboratorAdmin(admin.ModelAdmin):
     list_display = ('trip', 'user', 'role', 'joined_at')
     list_filter = ('role', 'joined_at')
     search_fields = ('trip__title', 'user__email')

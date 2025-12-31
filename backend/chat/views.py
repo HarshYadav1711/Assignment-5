@@ -8,7 +8,7 @@ from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-from .models import ChatRoom, Message
+from .models import ChatRoom, ChatMessage
 from .serializers import ChatRoomSerializer, MessageSerializer, MessageCreateSerializer
 
 
@@ -48,7 +48,7 @@ class ChatRoomViewSet(viewsets.ReadOnlyModelViewSet):
 
 class MessageViewSet(viewsets.ModelViewSet):
     """
-    ViewSet for Message CRUD operations.
+    ViewSet for ChatMessage CRUD operations.
     
     Used for message history and fallback message creation (if WebSocket fails).
     """
@@ -62,7 +62,7 @@ class MessageViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         """Filter by chat room if provided."""
-        queryset = Message.objects.all()
+        queryset = ChatMessage.objects.all()
         chat_room_id = self.request.query_params.get('chat_room_id')
         if chat_room_id:
             queryset = queryset.filter(chat_room_id=chat_room_id)

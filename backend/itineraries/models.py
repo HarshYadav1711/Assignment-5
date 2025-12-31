@@ -58,7 +58,7 @@ class Itinerary(models.Model):
             models.Index(fields=['trip', 'date'], name='itinerary_trip_date_idx'),
             
             # Get itineraries for date range
-            models.Index(fields=['trip', 'date', '-created_at'], name='itinerary_trip_date_created_idx'),
+            models.Index(fields=['trip', 'date', '-created_at'], name='itinerary_trip_date_crt_idx'),
         ]
     
     def __str__(self):

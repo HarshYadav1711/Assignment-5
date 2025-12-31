@@ -2,7 +2,7 @@
 Admin configuration for Poll models.
 """
 from django.contrib import admin
-from .models import Poll, PollOption, PollVote
+from .models import Poll, PollOption, Vote
 
 
 @admin.register(Poll)
@@ -21,8 +21,8 @@ class PollOptionAdmin(admin.ModelAdmin):
     raw_id_fields = ('poll',)
 
 
-@admin.register(PollVote)
-class PollVoteAdmin(admin.ModelAdmin):
+@admin.register(Vote)
+class VoteAdmin(admin.ModelAdmin):
     list_display = ('user', 'poll', 'option', 'created_at')
     list_filter = ('created_at',)
     search_fields = ('user__email', 'poll__question', 'option__text')

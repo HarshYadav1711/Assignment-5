@@ -40,6 +40,10 @@ RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
 # Copy application code
 COPY --chown=appuser:appuser . /app/
 
+# Create necessary directories (logs, staticfiles, media)
+RUN mkdir -p /app/logs /app/staticfiles /app/media && \
+    chown -R appuser:appuser /app/logs /app/staticfiles /app/media
+
 # Switch to non-root user
 USER appuser
 

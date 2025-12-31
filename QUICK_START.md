@@ -16,32 +16,35 @@ Get the Smart Trip Planner up and running in minutes.
 
 ### Backend with Docker
 
-1. **Navigate to backend directory:**
+1. **Navigate to docker directory:**
    ```bash
    cd backend/docker
    ```
 
-2. **Create environment file:**
+2. **Start services:**
    ```bash
-   cd ../..
-   cp backend/.env.example backend/.env
-   # Edit backend/.env with your settings (optional for local dev)
-   ```
-
-3. **Start services:**
-   ```bash
-   cd backend/docker
    docker-compose up --build
    ```
 
-4. **Run migrations:**
+3. **In a NEW terminal window, navigate to docker directory and run migrations:**
    ```bash
+   cd backend/docker
    docker-compose exec web python manage.py migrate
    ```
+   
+   **OR from project root:**
+   ```bash
+   docker-compose -f backend/docker/docker-compose.yml exec web python manage.py migrate
+   ```
 
-5. **Create superuser:**
+4. **Create superuser (in the same terminal as step 3):**
    ```bash
    docker-compose exec web python manage.py createsuperuser
+   ```
+   
+   **OR from project root:**
+   ```bash
+   docker-compose -f backend/docker/docker-compose.yml exec web python manage.py createsuperuser
    ```
 
 6. **Access the API:**
